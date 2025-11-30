@@ -1,0 +1,757 @@
+@startuml
+
+skinparam classAttributeIconSize 0
+skinparam classFontStyle Bold
+skinparam style strictuml hide empty members
+
+' ----------------------------
+' Interfaces
+' ----------------------------
+
+package "donjons" {
+    interface EntiteCombat {
+        + getSymbolePourAffichage() : String
+        + setPosition(x : integer, y : integer) :
+        + getX() : integer
+        + getY() : integer
+        + placerDansCase(c ) :
+        + getVitesse() : integer
+        + getClasseArmure() : integer
+        + getPortee() : integer
+        + peutAttaquer(cible : ) : boolean
+        + estMonstre() : boolean
+        + estPersonnage() : boolean
+        + getBonusAttaque() : integer
+        + getDeDegats() : integer
+        + getPv() : integer
+        + getPvMax() : integer
+        + getForce() : integer
+        + getDexterite() : integer
+        + subirDegats(degats : integer) :
+        + getDescriptionPourOrdreTour() : String
+        + getDesDegats() : Dice
+    }
+
+    ' ----------------------------
+    ' Paquet donjons.cartes
+    ' ----------------------------
+
+    package "donjons.cartes" {
+        class Carte {
+            - m_longueur : integer
+            - m_largeur : integer
+            +<<create>> Carte(longueur : integer, largeur : integer)
+            + getLongueur() : integer
+            + getLargeur() : integer
+            + getCase(x : integer, y : integer) : Case
+            + getEntite(x : integer, y : integer) : Optional<EntiteCombat>
+            + getEntite(nom : String) : Optional<EntiteCombat>
+            + estAccessible(x : integer, y : integer) : boolean
+            + compterObstacles() : integer
+            + compterPersonnages() : integer
+            + compterMonstres() : integer
+            + toString() : String
+        }
+
+        class Case {
+          - m_estObstacle : boolean
+          - m_symbole : String
+
+            +<<create>>Case()
+          + placerObstacle() :
+          + placerPersonnage(personnage: Personnage) :
+          + getSymboleFixe(monstre: Monstre) : char
+          + static attribuerNumerosMonstres(monstres: List<Monstre>) :
+          + placerMonstre(monstre: Monstre) :
+          + placerEquipement(equipement: Equipement) :
+          + viderCase() :
+          + estLibre() : boolean
+          + getEquipement() : Optional<Equipement>
+          + retirerEquipement() : Equipement
+          + estObstacle() : boolean
+          + contientEquipement() : boolean
+          + contientPersonnage() : boolean
+          + contientMonstre() : boolean
+          + getEntiteCombat() : EntiteCombat
+          + getPersonnage() : Optional<Personnage>
+          + getMonstre() : Optional<Monstre>
+          + toString() : String
+        }
+
+        class GestionPlacement {
+            +<<create>> GestionPlacement(carte)
+            + placerEntite(x : integer, y : integer, entite :) :
+            + placerEquipement(x : integer, y : integer, equipement : ) :
+            + calculDeplacement(x1 : integer, y1 : integer, x2 : integer, y2 : integer) : double
+            + deplacerEntite(x1 : integer, y1 : integer, x2 : integer, y2 : integer, entite : ) : boolean
+        }
+        class CarteDefaut extends Carte implements GenerateurObstacle {
+                +<<create>> CarteDefaut()
+                +genererObstacles() :
+                +genererEquipementsAleatoires(maxEquipements: int) : List<Equipement>
+                +placerEquipementsAleatoirement(equipements: List<Equipement>, gestion: GestionPlacement) :
+                +genererEtPlacerEquipementsAleatoirement(gestion: GestionPlacement) : List<Equipement>
+                +reinitialiserCarte() :
+                +afficherCarte() :
+                +toString() : String
+                +genererArmeAleatoire() : Equipement
+                +genererArmureAleatoire() : Equipement
+                +genererLongueur() : Integer
+                +genererLargeur() : Integer
+            }
+
+        interface GenerateurObstacle {
+                +genererObstacles() :
+            }
+    }
+    package donjons.affichages {
+        class AffichageCarte {
+            - ANSI_RESET : String
+            - ANSI_GREEN : String
+            - ANSI_RED : String
+            - ANSI_YELLOW : String
+            - ANSI_GRAY : String
+            - ANSI_BG_GRAY : String
+            +<<create>> AffichageCarte(carte: Carte)
+            +afficherCarte() :
+            +toString() : String
+            +couleurPourCase(c: Case) : String
+        }
+         class AffichageMiseEnPlace {
+                +<<create>> AffichageMiseEnPlace(Carte carte, GenerateurObstacle generateur)
+                + afficherIntroduction(List<Personnage>, List<Monstre>, List<Equipement>) :
+                + placementAutomatique(List<Personnage>, List<Monstre>) :
+                + placementManuel(Scanner, List<Personnage>, List<Monstre>, List<Equipement>) :
+                + creerEquipementManuellement(Scanner) : Equipement
+                + demanderCoordonnees(Scanner, String) : Integer[]
+                + placerEntiteManuellement(Scanner, EntiteCombat)
+                + toString() : String
+         }
+         class AfficheurEntite {
+                +<<create>> AfficheurEntite(carte, generateurObstacle)
+                + creerPersonnages(Scanner) :
+                + creerMonstres(Scanner) :
+                + demanderEquipementInitial(List~Personnage~) :
+                + List getPersonnages() : List
+                + List getMonstres() : List
+                + getEquipements() : List
+                --
+                + choisirRace(Scanner) : Race
+                + choisirClasse(Scanner) : Classe
+                + lireEntier(Scanner, integer, integer) : Integer
+                + genererMonstresAutomatique() :
+                + choisirMonstresParmiPredifinis(Scanner) :
+                + creerMonstresManuellement(Scanner) :
+                + validerNomLettreSeulement(String) : Boolean
+                --
+                + static final String[] ESPECES_DISPONIBLES
+         }
+         class AfficheurTour {
+               - RESET : String
+               - CYAN : String
+               - MAGENTA : String
+               - BOLD : String
+               - VERT : String
+               - JAUNE : String
+               - ROUGE : String
+               - BLEU : String
+
+               +<<create>> AfficheurTour(Carte carte, GestionPlacement placement, Tour tour, Jeu jeu,AfficheurEntite afficheurEntite)
+               + afficherTour(tourActuel: Integer, entiteActive, ordreTour, numeroDonjon: Integer): boolean
+               - afficherEnTeteDonjon(entiteActive: EntiteCombat, numeroDonjon: int):
+               - afficherOrdreTour(tourActuel: int, entiteActive: EntiteCombat, ordreTour: List<EntiteCombat>):
+               - afficherCarte():
+               - afficherDetailsEntite(entite: EntiteCombat):
+               - afficherActionsRestantes(entite: EntiteCombat, actionsRestantes: int, carte: Carte):
+               - afficherChoixMaitreJeu():
+               + gererActions(entite: EntiteCombat, carte: Carte, scanner: Scanner): boolean
+               - gererAttaque(attaquant: EntiteCombat, carte: Carte, argument: String, scanner: Scanner): boolean
+               - gererDeplacement(entite: EntiteCombat, carte: Carte, argument: String): boolean
+               + finAction(scanner: Scanner, entite: EntiteCombat, carte: Carte): boolean
+               + afficherFin():
+               + conditionDeFin(): boolean
+               + toString(): String
+         }
+    }
+}
+' ----------------------------
+' Paquet mecaniques
+' ----------------------------
+
+package "mecaniques" {
+    class Dice {
+        - nombreDes : final integer
+        - faces : final integer
+        +<<create>> Dice(nombreDes : integer, faces : integer)
+        + lancer() : integer
+        + toString() : String
+    }
+
+    class Combat {
+        +<<create>> Combat(attaquant : , cible : , carte : Carte)
+        + verifPortee() : boolean
+        + executerAttaque() : integer
+        + toString() : String
+    }
+    class Jeu {
+      - m_tourActuel : integer
+      - m_numeroDonjon : integer
+      - scanner : Scanner
+
+      + <<create>> Jeu(personnages: List<Personnage>, monstres: List<Monstre>, carte: Carte, placement: GestionPlacement, tour: Tour, afficheurTour: AfficheurTour, numeroDonjon: integer)
+      + setAfficheurTour(afficheurTour: AfficheurTour):
+      + lancerBoucleDeJeu(): boolean
+      + personnageMort(): boolean
+      + tousLesMonstresMorts(): boolean
+      + getListPersonnage(): List<Personnage>
+      + getListMonstre(): List<Monstre>
+      + toString(): String
+    }
+    class Tour {
+      - m_indiceActuel : integer
+
+      + <<create>>Tour(listeEntiteCombat: ArrayList<EntiteCombat>)
+      + <<create>>Tour()
+      + trierParInitiative():
+      + ajouterEntite(entiteCombat: EntiteCombat):
+      + getListeEntiteCombat(): ArrayList<EntiteCombat>
+      + toString(): String
+    }
+}
+
+' ----------------------------
+' Paquet monstres
+' ----------------------------
+
+package "monstres" {
+    class Monstre {
+      - m_espece : String
+      - m_numero : String
+      - m_x : integer
+      - m_y : integer
+      - m_symbole : String
+
+      +<<create>>Monstre(espece: String, numero: String, attaque: Attaque, caracteristiqueMonstre: CaracteristiqueMonstre)
+      + getNom() : String
+      + getInitiative() : int
+      + estVivant() : boolean
+      + lancerInitiative(dice: Dice) : int
+      + setPosition(x: int, y: int) :
+      + getX() : int
+      + getY() : int
+      + placerDansCase(c: Case) :
+      + getVitesse() : int
+      + getPortee() : int
+      + peutAttaquer(cible: EntiteCombat) : boolean
+      + estMonstre() : boolean
+      + estPersonnage() : boolean
+      + getBonusAttaque() : int
+      + getClasseArmure() : int
+      + getDeDegats() : int
+      + getPv() : int
+      + getPvMax() : int
+      + getForce() : int
+      + getDexterite() : int
+      + subirDegats(degats: int) :
+      + getDesDegats() : Dice
+      + getDescriptionPourOrdreTour() : String
+      + getSymbolePourAffichage() : String
+      + setNumeroType(numero: String) :
+      + getNumeroType() : String
+      + getSymboleUnique() : String
+      + setSymbole(symbole: String) :
+      + getSymbole() : String
+      + getAttaque() : Attaque
+      + getType() : String
+      + getNumero() : String
+      + static gobelin(numero: String) : Monstre
+      + static orc(numero: String) : Monstre
+      + static squelette(numero: String) : Monstre
+      + toString() : String
+    }
+
+    class CaracteristiqueMonstre {
+      - m_pv : integer
+      - m_pvMax : integer
+      - m_force : integer
+      - m_vitesse : integer
+      - m_dexterite : integer
+      - m_initiative : integer
+      - m_classeArmure : integer
+
+      +<<create>>CaracteristiqueMonstre(pv: integer, force: integer, vitesse: integer, dexterite: integer, initiative: integer, classeArmure: integer)
+      + getPv() : integer
+      + setPv(pv: int) : integer
+      + getForce() : integer
+      + setForce(force: int) : integer
+      + getVitesse() : integer
+      + getDexterite() : integer
+      + setDexterite(dexterite: integer) : integer
+      + getInitiative() : integer
+      + getClasseArmure() : integer
+      + getPvMax() : integer
+      + toString() : String
+    }
+
+    class Attaque {
+      - m_portee : int
+
+      +<<create>>Attaque(portee: int, degat: Dice)
+      + lancerDegat() : int
+      + getPortee() : int
+      + getDeDegats() : Dice
+      + toString() : String
+    }
+}
+
+' ----------------------------
+' Paquet personnages.classes
+' ----------------------------
+
+package "personnages.classes" {
+    class Classe {
+      - m_nom : String
+      - m_pv : integer
+
+      +<<create>>Classe(nom: String, pv: integer)
+      + getNom() : String
+      + getPv() : integer
+      + attribuerEquipements() : Inventaire
+      + toString() : String
+    }
+
+    class Guerrier {
+      +<<create>>Guerrier()
+      + attribuerEquipements() : Inventaire
+      + toString() : String
+    }
+
+    class Clerc {
+      +<<create>>Clerc()
+      + attribuerEquipements() : Inventaire
+      + toString() : String
+    }
+
+    class Magicien {
+      +<<create>>Magicien()
+      + attribuerEquipements() : Inventaire
+      + toString() : String
+    }
+
+    class Roublard {
+      +<<create>>Roublard()
+      + attribuerEquipements() : Inventaire
+      + toString() : String
+    }
+}
+
+' ----------------------------
+' Paquet personnages.races
+' ----------------------------
+
+package "personnages.races" {
+    abstract class Race {
+      {abstract} +getBonusForce(): integer
+      {abstract} +getBonusDexterite(): integer
+      {abstract} +getBonusVitesse(): integer
+      {abstract} +getBonusInitiative(): integer
+      {abstract} +getNom(): String
+      {abstract} +toString(): String
+    }
+
+    class Nain {
+      +getBonusForce(): integer
+      +getBonusDexterite(): integer
+      +getBonusVitesse(): integer
+      +getBonusInitiative(): integer
+      +getNom(): String
+      +toString(): String
+    }
+
+    class Humain {
+      +getBonusForce(): integer
+      +getBonusDexterite(): integer
+      +getBonusVitesse(): integer
+      +getBonusInitiative(): integer
+      +getNom(): String
+      +toString(): String
+    }
+
+    class Halfein {
+      +getBonusForce(): integer
+      +getBonusDexterite(): integer
+      +getBonusVitesse(): integer
+      +getBonusInitiative(): integer
+      +getNom(): String
+      +toString(): String
+    }
+
+    class Elfe {
+      +getBonusForce(): integer
+      +getBonusDexterite(): integer
+      +getBonusVitesse(): integer
+      +getBonusInitiative(): integer
+      +getNom(): String
+      +toString(): String
+    }
+}
+
+' ----------------------------
+' Paquet personnages.equipements
+' ----------------------------
+
+package "personnages.equipements" {
+    interface Equipement {
+      + getNom(): String
+      + setPosition(x: integer, y: integer):
+      + getX(): integer
+      + getY(): integer
+      + ajouterAInventaire(inventaire: Inventaire):
+      + equipeSurCePersonnage(p: Personnage):
+      + estArme(): boolean
+      + estArmure(): boolean
+    }
+    class EffetEquipement {
+      - m_bonusForce : integer
+      - m_bonusVitesse : integer
+
+      +<<create>>EffetEquipement(force: integer, vitesse: integer)
+      + augmenterBonusAttaque(valeur: integer) :
+      + augmenterBonusDegats(valeur: integer) :
+      + toString() : String
+    }
+    class EffetBonusMagique {
+      - m_bonusAttaque : integer
+      - m_bonusDegats : integer
+
+      +<<create>>EffetBonusMagique(bonusAttaque: integer, bonusDegats: integer)
+      + augmenterBonusAttaque(valeur: integer) :
+      + augmenterBonusDegats(valeur: integer) :
+      + toString() : String
+    }
+    package "personnages.equipements.armures" {
+        class Armure {
+          - m_nom : String
+          - m_classeArmure : integer
+          - m_x : integer
+          - m_y : integer
+
+          + Armure(nom: String, classeArm: integer, effetEquipement: Optional<EffetEquipement>)
+          + getNom(): String
+          + getClasseArmure(): integer
+          + setPosition(x: integer, y: integer):
+          + getX(): integer
+          + getY(): integer
+          + ajouterAInventaire(inventaire: Inventaire):
+          + equipeSurCePersonnage(p: Personnage):
+          + estArme(): boolean
+          + estArmure(): boolean
+          + toString(): String
+        }
+
+        class ArmureLegere {
+          +<<create>>ArmureLegere(nom: String, classeArm: integer, effetEquipement: Optional<EffetEquipement>)
+          + static getArmureEcaille(): Armure
+          + static getArmureDemiPlate(): Armure
+          + toString(): String
+        }
+
+        class ArmureLourde {
+          +<<create>>ArmureLourde(nom: String, classeArm: integer, effetEquipement: Optional<EffetEquipement>)
+          + static getCotteDeMaille(): Armure
+          + static getArmureDemiPlate(): Armure
+          + toString(): String
+        }
+    }
+    package "personnages.equipements.armes" {
+        class Arme {
+          - m_portee : integer
+          - m_nom : String
+          - m_x : integer
+          - m_y : integer
+
+          +<<create>>Arme(nom: String, dice: Dice, portee: integer, effetEquipement: Optional<EffetEquipement>)
+          + getDegat(): integer
+          + getPortee(): integer
+          + augmenterBonusAttaque(valeur: integer):
+          + augmenterBonusDegats(valeur: integer):
+          + getNom(): String
+          + setPosition(x: integer, y: integer):
+          + getX(): integer
+          + getY(): integer
+          + ajouterAInventaire(inventaire: Inventaire):
+          + equipeSurCePersonnage(p: Personnage):
+          + estArme(): boolean
+          + estArmure(): boolean
+          + toString(): String
+        }
+
+        class ArmeCourante {
+          +<<create>>ArmeCourante(nom: String, dice: Dice, portee: integer, effetEquipement: Optional<EffetEquipement>)
+          + static getBaton(): Arme
+          + static getMasse(): Arme
+          + toString(): String
+        }
+
+        class ArmeDistance {
+          +<<create>>ArmeDistance(nom: String, dice: Dice, portee: integer, effetEquipement: Optional<EffetEquipement>)
+          + static getArbaleteLegere(): Arme
+          + static getFronde(): Arme
+          + static getArcCourt(): Arme
+          + toString(): String
+        }
+
+        class ArmeGuerre {
+          +<<create>>ArmeGuerre(nom: String, dice: Dice, portee: integer, effetEquipement: Optional<EffetEquipement>)
+          + static getEpeeLongue(): Arme
+          + static getRapiere(): Arme
+          + static getEpeeDeuxMains(): Arme
+          + toString(): String
+        }
+    }
+}
+' ----------------------------
+' Paquet sorts
+' ----------------------------
+package "personnages.sorts" {
+
+    interface Sort {
+      + getNom(): String
+    }
+
+    class ArmeMagique {
+      + getNom(): String
+      + demanderCiblePersonnage(personnages: List<Personnage>): Personnage
+      + demanderArme(personnage: Personnage): Arme
+      + lancerSort(lanceur: Personnage, cible: Personnage, arme: Arme):
+    }
+
+    class BoogieWoogie {
+      + getNom(): String
+      + demanderEntite(personnages: List<Personnage>, monstres: List<Monstre>, message: String): EntiteCombat
+      + lancerSort(lanceur: Personnage, e1: EntiteCombat, e2: EntiteCombat, carte: Carte):
+    }
+
+    class Guerison {
+      + getNom(): String
+      + demanderCiblePersonnage(personnages: List<Personnage>, lanceur: Personnage): Personnage
+    }
+}
+
+' ----------------------------
+' Paquet personnages
+' ----------------------------
+
+package "personnages" {
+    class Personnage {
+      - m_nom : String
+      - m_x : integer
+      - m_y : integer
+
+      +<<create>>Personnage(nom: String, classe: Classe, race: Race)
+      + getNom() : String
+      + getInitiative() : integer
+      + estVivant() : boolean
+      + lancerInitiative(dice: Dice) : integer
+      + getVitesse() : integer
+      + setPosition(x: integer, y: integer) :
+      + getX() : integer
+      + getY() : integer
+      + placerDansCase(c: Case) :
+      + getPortee() : integer
+      + peutAttaquer(cible: EntiteCombat) : boolean
+      + getBonusAttaque() : integer
+      + getClasseArmure() : integer
+      + getDeDegats() : integer
+      + getPv() : integer
+      + subirDegats(degats: integer) :
+      + getPvMax() : integer
+      + getForce() : integer
+      + getDexterite() : integer
+      + estMonstre() : boolean
+      + estPersonnage() : boolean
+      + getDescriptionPourOrdreTour() : String
+      + getSymbolePourAffichage() : String
+      + getDesDegats() : Dice
+      + estDeClasse(nom: String) : boolean
+      + getPvActuels() : integer
+      + peutLancerSort(nomSort: String) : boolean
+      + setPvActuels(pvActuels: integer) :
+      + soigner() :
+      + getClasse() : Classe
+      + getRace() : Race
+      + getArmePortee() : Optional<Arme>
+      + getArmurePortee() : Optional<Armure>
+      + getInventaire() : Inventaire
+      + equiperArmure(armure: Armure) :
+      + toString() : String
+    }
+
+    class Inventaire {
+
+      +<<create>>Inventaire()
+      + ajouterArme(arme: Arme) :
+      + ajouterArmure(armure: Armure) :
+      + getArmePortee() : Optional<Arme>
+      + getArmurePortee() : Optional<Armure>
+      + equiperArme(arme: Arme) :
+      + equiperArmure(armure: Armure) :
+      + getInventaire() : String
+      + getContenu() : ArrayList<Equipement>
+      + ajouter(equipement: Equipement) :
+      + getArmes() : List<Arme>
+      + getArmures() : List<Armure>
+      + toString() : String
+    }
+    class Caracteristique {
+      - m_pv : integer
+      - m_pvActuels : integer
+      - m_pvMax : integer
+      - m_force : integer
+      - m_dexterite : integer
+      - m_vitesse : integer
+      - m_initiative : integer
+
+      +<<create>>Caracteristique(classe: Classe, race: Race)
+      + getPv() : integer
+      + setPv(pv: int) : integer
+      + getPvMax() : integer
+      + getPvActuels() : integer
+      + setPvActuels(pv: integer) :
+      + getForce() : integer
+      + getDexterite() : integer
+      + getVitesse() : integer
+      + getInitiative() : integer
+      + toString() : String
+    }
+}
+' ----------------------------
+' Utilitaires
+' ----------------------------
+package "utiles" {
+    class Utile {
+      + convertirCoordonnees(coord: String, longueurMax: integer): integer[])
+    }
+}
+class Main
+{
+    +{static} main(args: String[*])
+}
+' ----------------------------
+' Relations d'héritage
+' ----------------------------
+Monstre --|> EntiteCombat
+Personnage --|> EntiteCombat
+
+ArmureLegere --|> Armure
+ArmureLourde --|> Armure
+Armure ..|> Equipement
+
+ArmeCourante --|> Arme
+ArmeDistance --|> Arme
+ArmeGuerre --|> Arme
+Arme ..|> Equipement
+
+Guerrier --|> Classe
+Clerc --|> Classe
+Magicien --|> Classe
+Roublard --|> Classe
+
+Nain --|> Race
+Humain --|> Race
+Halfein --|> Race
+Elfe --|> Race
+
+ArmeMagique ..|> Sort
+BoogieWoogie ..|> Sort
+Guerison ..|> Sort
+
+CarteDefaut --|> Carte
+CarteDefaut ..|> GenerateurObstacle
+
+' ----------------------------
+' Relations de composition (avec attributs)
+' ----------------------------
+Personnage *--> "1" Classe : m_classe
+Personnage *--> "1" Race : m_race
+Personnage *--> "1" Caracteristique : m_caracteristique
+Personnage *--> "1" Inventaire : m_inventaire
+
+Monstre *--> "1" CaracteristiqueMonstre : m_caracteristiqueMonstre
+Monstre *--> "1" Attaque : m_attaque
+
+Inventaire *--> "0..*" Arme : m_armes
+Inventaire *--> "0..*" Armure : m_armures
+
+Carte *--> "n" Case : m_cases
+
+' ----------------------------
+' Relations d'agrégation (avec attributs)
+' ----------------------------
+Case o--> "0..1" Personnage : m_personnage
+Case o--> "0..1" Monstre : m_monstre
+Case o--> "0..1" Equipement : m_equipement
+
+' ----------------------------
+' Associations avec <<use>>
+' ----------------------------
+AfficheurTour --> "1" Carte : <<use>>\nm_carte
+AfficheurTour --> "1" GestionPlacement : <<use>>\nm_placement
+AfficheurTour --> "1" Tour : <<use>>\nm_tour
+AfficheurTour --> "1" Jeu : <<use>>\nm_jeu
+AfficheurTour --> "1" AfficheurEntite : <<use>>\nm_afficheurEntite
+
+Jeu --> "1..*" Personnage : <<use>>\nm_personnages
+Jeu --> "1..*" Monstre : <<use>>\nm_monstres
+Jeu --> "1" Carte : <<use>>\nm_carte
+Jeu --> "1" GestionPlacement : <<use>>\nm_placement
+Jeu --> "1" Tour : <<use>>\nm_tour
+Jeu --> "1" AfficheurTour : <<use>>\nm_afficheurTour
+
+Tour --> "0..*" EntiteCombat : <<use>>\nm_listeEntiteCombat
+
+Combat --> "1" EntiteCombat : <<use>>\nm_attaquant
+Combat --> "1" EntiteCombat : <<use>>\nm_cible
+Combat --> "1" Carte : <<use>>\nm_carte
+
+GestionPlacement --> "1" Carte : <<use>>\nm_carte
+
+' ----------------------------
+' Autres relations spécialisées
+' ----------------------------
+ArmeMagique --> "1" Personnage : <<use>>\n(demande cible)
+ArmeMagique --> "1" Arme : <<use>>\n(améliore)
+
+BoogieWoogie --> "2" EntiteCombat : <<use>>\n(échange)
+BoogieWoogie --> "1" Carte : <<use>>\n(modifie positions)
+
+Guerison --> "1" Personnage : <<use>>\n(soigne)
+
+Caracteristique ..> Dice : <<create>>\n(génère stats)
+CaracteristiqueMonstre ..> Dice : <<create>>\n(génère stats)
+Attaque ..> Dice : <<use>>\nm_degat
+
+Utile ..> Carte : <<use>>\n(convertit coord)
+
+' ----------------------------
+' Relations de dépendance
+' ----------------------------
+Personnage ..> Case : <<use>>\n(placement)
+Personnage ..> Inventaire : <<use>>\n(équipement)
+Personnage ..> Equipement : <<use>>\n(manipulation)
+Personnage ..> Sort : <<use>>\n(lancement)
+
+Monstre ..> Case : <<use>>\n(placement)
+Monstre ..> Attaque : <<use>>\n(combat)
+
+CarteDefaut ..> GestionPlacement : <<use>>\n(placement)
+CarteDefaut ..> Equipement : <<create>>\n(génération)
+
+AfficheurEntite ..> Personnage : <<create>>\n(création)
+AfficheurEntite ..> Monstre : <<create>>\n(création)
+AfficheurEntite ..> Equipement : <<create>>\n(création)
+AfficheurEntite ..> Race : <<use>>\n(sélection)
+AfficheurEntite ..> Classe : <<use>>\n(sélection)
+
+
+@enduml
